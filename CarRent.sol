@@ -588,7 +588,7 @@ contract Booking is Ownable {
             uint256 _amount = amount - _cancelationCharges;
 
             safeTransferFrom(IERC20(_tokenAllowed), address(this), _userAddress, _amount + securityDeposit + serviceFee);
-            safeTransferFrom(IERC20(_tokenAllowed), address(this), _carOwner, securityDeposit);
+            safeTransferFrom(IERC20(_tokenAllowed), address(this), _carOwner, _cancelationCharges);
         } else if (_bookingStatus == 4){
             require (startTime >= block.timestamp, "endTime must be completed");
             Car car_ = Car(car);
