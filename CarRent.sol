@@ -307,11 +307,13 @@ contract Car is Ownable {
         if (reservationRequestRequired == true) {
             _bookingStatus = 3;
         }
-        Booking _booking = new Booking(_cost, securityDeposit, _startTime, _endTime, _bookingStatus, msg.sender, carRent);
+        uint256 _serviceFee = _cost * CarRent(carRent).serviceFee() / 100;
+        Booking _booking = new Booking(_cost, securityDeposit, _serviceFee, _startTime, _endTime, _bookingStatus, msg.sender, carRent);
         bookedList.push(_booking);
         allBookings.push(_booking);
 
-        safeTransferFrom(IERC20(tokenAllowed), msg.sender, address(_booking), _cost);
+
+        safeTransferFrom(IERC20(tokenAllowed), tx.origin, address(_booking), _cost + securityDeposit + _serviceFee);
 
         return address(_booking);
     }
@@ -320,7 +322,7 @@ contract Car is Ownable {
     function removeOldBookings () public {
         uint256 i = 0;
         for (i = bookedList.length -1 ; i >=0; i--) {
-            if (block.timestamp > bookedList[i].endTime() || bookedList[i].bookingStatus() == 1 || bookedList[i].bookingStatus() == 2) {
+            if (block.timestamp > bookedList[i].endTime() || bookedList[i].bookingStatus() == 1 || bookedList[i].bookingStatus() == 2 || bookedList[i].bookingStatus() == 4) {
                 bookedList[i] = bookedList[bookedList.length -1];
                 bookedList.pop();
             }
@@ -542,6 +544,7 @@ contract Booking is Ownable {
 
     uint256 public amount;
     uint256 public securityDeposit;
+    uint256 public serviceFee;
     uint256 public startTime;
     uint256 public endTime;
     uint256 public bookingTime;
@@ -550,9 +553,10 @@ contract Booking is Ownable {
     address public car;
     address public user;
 
-    constructor (uint256 _amount, uint256 _securityDeposit, uint256 _startTime, uint256 _endTime, uint256 _bookingStatus, address _user, address _carRent) {
+    constructor (uint256 _amount, uint256 _securityDeposit, uint256 _serviceFee, uint256 _startTime, uint256 _endTime, uint256 _bookingStatus, address _user, address _carRent) {
         amount = _amount;
         securityDeposit = _securityDeposit;
+        serviceFee = _serviceFee;
         startTime = _startTime;
         endTime = _endTime;
         bookingTime = block.timestamp;
@@ -573,6 +577,7 @@ contract Booking is Ownable {
 
             safeTransferFrom(IERC20(_tokenAllowed), address(this), _userAddress, amount);
             safeTransferFrom(IERC20(_tokenAllowed), address(this), _carOwner, securityDeposit);
+            safeTransferFrom(IERC20(_tokenAllowed), address(this), CarRent(carRent).serviceFeeWallet(), serviceFee);
         } else if (_bookingStatus == 2) {
             require (startTime >= block.timestamp, "endTime must be completed");
             Car car_ = Car(car);
@@ -613,6 +618,7 @@ contract CarRent is Ownable {
     bool public carListingOpenForEveryone;
 
     uint256 public serviceFee; // This is the fee that we charge for every booking. This value is in %. Final service amount is calculated by (basePrice * rentTime * serviceFee)/100
+    address public serviceFeeWallet;
 
     mapping (address => bool) public verfiedCustomers; // if car listing is not open for everyone then only verified customers can book cars. Or else the booking will go on a waiting list and will be approved by the admin.
     mapping (address => bool) public isAdmin;
@@ -713,6 +719,14 @@ contract CarRent is Ownable {
 
     function removeAdmin (address _admin) public onlyOwner() {
         isAdmin[_admin] = false;
+    }
+
+    function setServiceFeeWallet (address _wallet) public onlyOwner(){
+        serviceFeeWallet = _wallet;
+    }
+
+    function setServiceFee (uint _fee) public onlyOwner() {
+        serviceFee = _fee;
     }
 
 }
