@@ -581,17 +581,21 @@ contract Booking is Ownable {
         } else if (_bookingStatus == 2) {
             require (startTime >= block.timestamp, "endTime must be completed");
             Car car_ = Car(car);
+            address _carOwner = car_.owner();
             address _tokenAllowed = car_.tokenAllowed();
             address _userAddress = User(user).owner();
+            uint256 _cancelationCharges = amount * Car(car).cancelationCharges();
+            uint256 _amount = amount - _cancelationCharges;
 
-            safeTransferFrom(IERC20(_tokenAllowed), address(this), _userAddress, amount + securityDeposit);
-
+            safeTransferFrom(IERC20(_tokenAllowed), address(this), _userAddress, _amount + securityDeposit + serviceFee);
+            safeTransferFrom(IERC20(_tokenAllowed), address(this), _carOwner, securityDeposit);
         } else if (_bookingStatus == 4){
             require (startTime >= block.timestamp, "endTime must be completed");
             Car car_ = Car(car);
             address _tokenAllowed = car_.tokenAllowed();
             address _carOwner = car_.owner();
 
+            safeTransferFrom(IERC20(_tokenAllowed), address(this), CarRent(carRent).serviceFeeWallet(), serviceFee);
             safeTransferFrom(IERC20(_tokenAllowed), address(this), _carOwner, amount + securityDeposit);
         }
         bookingStatus = _bookingStatus;
