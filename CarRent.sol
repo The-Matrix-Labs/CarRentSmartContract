@@ -360,9 +360,17 @@ contract Car is Ownable {
         if (_days * 1 days != (_endTime - _startTime)) {
             _days ++;
         }
+        require (_endTime < block.timestamp + bookingWindow * 1 days, "Booking window is not in range");
         require (_days < minimumTripLength || _days > maximumTripLength, "Trip length is not in range");
 
         uint256 _cost = _days * basePrice;
+
+        if (_days >= 30 && monthlyDiscount > 0){
+            _cost = _cost * (100 - monthlyDiscount) / 100;
+        } else if (_days >= 7 && weeklyDiscount > 0) {
+            _cost = _cost * (100 - weeklyDiscount) / 100;
+        }
+
         uint256 i =0;
         uint256 _discountDays = 0;
         for (i= 0; i< specialTimes.length; i++) {
