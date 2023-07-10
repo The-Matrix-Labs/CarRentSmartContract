@@ -704,8 +704,8 @@ contract CarRent is Ownable {
 
     function cancelBooking (address _booking) public {
         require (msg.sender == User(Booking(_booking).user()).owner(), "you don't have this booking");
+        require ((Car(Booking(_booking).car()).cancelationsAllowed()), "You can't cancel this booking");
         Booking booking_ = Booking(_booking);
-        require(booking_.user() == address(this), 'Not owner of booking');
 
         booking_.setBookingStatus(2);
     }
