@@ -541,6 +541,10 @@ contract User is Ownable {
         require(returndata.length == 0 || abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
     }
 
+    function setCancelationsAllowed (address _car, bool _cancelationsAllowed) public {
+        Car(_car).setCancelationsAllowed (_cancelationsAllowed);
+    }
+
 
 }
 
@@ -721,6 +725,11 @@ contract CarRent is Ownable {
 
         bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
         require(returndata.length == 0 || abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+    }
+
+    function setCancelationsAllowed (address _car, bool _cancelationsAllowed) public {
+        User user_ = User(userMapping[msg.sender]);
+        user_.setCancelationsAllowed (_car, _cancelationsAllowed);
     }
 
     // Only owner functions here ---------------------------
